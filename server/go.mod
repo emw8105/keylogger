@@ -1,4 +1,4 @@
-module example/hello
+module keylogger_server
 
 go 1.23.2
 

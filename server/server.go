@@ -61,7 +61,8 @@ func logHandler(c *gin.Context) {
 		return
 	}
 
-	logFileName := fmt.Sprintf("%s_%s_%s.log", payload.SystemInfo.Hostname, time.Now().Format("20060102_150405"), payload.SystemInfo.SystemID[:8])
+	// we'll create a log for each device daily, if a batch log is received with existing logs for that day, it will append to the existing log file
+	logFileName := fmt.Sprintf("%s_%s_%s.log", payload.SystemInfo.Hostname, time.Now().Format("2006-01-02"), payload.SystemInfo.SystemID[:8])
 
 	logFilePath := fmt.Sprintf("%s/%s", logDir, logFileName)
 	logEntry := fmt.Sprintf(
@@ -80,6 +81,23 @@ func logHandler(c *gin.Context) {
 		time.Now().Format("2006-01-02 15:04:05"),
 	)
 
+	f, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644) // open the file w/ rw for owner r for group and others
+	if err != nil {
+		log.Printf("Failed to open log file: %v", err)
+		c.JSON(500, gin.H{"error": "Failed to open log file", "details": err.Error()})
+		return
+	}
+	defer f.Close()
+
+	if _, err := f.WriteString(logEntry); err != nil {
+		log.Printf("Failed to write to log file: %v", err)
+		c.JSON(500, gin.H{"error": "Failed to write to log file", "details": err.Error()})
+		return
+	}
+
+	log.Printf("Received log batch from system %s. Stored to %s", payload.SystemInfo.SystemID, logFilePath)
+	c.JSON(200, gin.H{"message": "Log batch received successfully", "log_file": logFileName})
+
 }
 
 func main() {
@@ -92,17 +110,15 @@ func main() {
 	router := gin.Default() // oh yea we rockin gin
 
 	// router.POST("/temp", temp)
-
-	// router.LoadHTMLGlob(TEMPLATE_DIR)
-
 	router.POST("/log", logHandler)
 
+	// router.LoadHTMLGlob(TEMPLATE_DIR)
 	// router.GET("/logs", viewLogsHandler) // might modify this for auth
 
 	fmt.Printf("Go server is running on http://localhost%s\n", SERVER_PORT)
+	log.Printf("Logs will be stored in: %s", LOGS_DIR)
 
 	if err := router.Run(SERVER_PORT); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
-
 }
