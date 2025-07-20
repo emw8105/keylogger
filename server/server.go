@@ -17,11 +17,12 @@ const PUBLIC_KEY_FILE = "server_public.pem"
 // const TEMPLATE_DIR = "templates/*"
 
 type SystemInfo struct {
-	SystemID  string `json:"system_id"`
-	Hostname  string `json:"hostname"`
-	OS        string `json:"os"`
-	OSRelease string `json:"os_release"`
-	Username  string `json:"username"`
+	SystemID     string `json:"system_id"`
+	Hostname     string `json:"hostname"`
+	OS           string `json:"os"`
+	OSRelease    string `json:"os_release"`
+	Username     string `json:"username"`
+	ActiveWindow string `json:"active_window"`
 }
 
 type LogPayload struct {

