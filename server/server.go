@@ -13,6 +13,7 @@ const SERVER_PORT = ":8080"
 const KEYS_DIR = "./keys"
 const PRIVATE_KEY_FILE = "server_private.pem"
 const PUBLIC_KEY_FILE = "server_public.pem"
+const MAX_LOG_CHARACTERS = 500
 
 // const TEMPLATE_DIR = "templates/*"
 

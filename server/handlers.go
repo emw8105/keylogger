@@ -55,6 +55,13 @@ func logHandler(c *gin.Context) {
 		return
 	}
 
+	if len(decryptedLogContent) > MAX_LOG_CHARACTERS {
+		log.Printf("ERROR: Decrypted log content from system %s exceeds maximum allowed length (%d > %d). Rejecting.",
+			payload.SystemInfo.SystemID, len(decryptedLogContent), MAX_LOG_CHARACTERS)
+		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "Log content exceeds maximum allowed length"})
+		return
+	}
+
 	logDir := filepath.Join(LOGS_DIR, payload.SystemInfo.SystemID)
 	if err := os.MkdirAll(logDir, 0755); err != nil {
 		log.Printf("ERROR: Failed to create log directory '%s': %v", logDir, err)
