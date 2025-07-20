@@ -1,3 +1,4 @@
 /logger/keylogs.txt
 keylogger_server.exe
 server/logs/*
+server/keys/*
