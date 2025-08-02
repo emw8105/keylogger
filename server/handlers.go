@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/x509"
 	"encoding/pem"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -51,8 +52,19 @@ func logHandler(c *gin.Context) {
 		return
 	}
 
-	if err := save_to_file(payload, decryptedLogContent, c); err != nil {
-		log.Printf("ERROR: Failed to save log file: %v", err)
+	if len(decryptedLogContent) > MAX_LOG_CHARACTERS {
+		errMsg := fmt.Sprintf("Decrypted log content from system %s exceeds maximum allowed length (%d > %d). Rejecting.",
+			payload.SystemInfo.SystemID, len(decryptedLogContent), MAX_LOG_CHARACTERS)
+		log.Printf("ERROR: %s", errMsg)
+		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": errMsg})
 		return
 	}
+
+	if err := logSaver.Save(payload, decryptedLogContent); err != nil {
+		log.Printf("ERROR: Failed to save log: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save log", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Log batch received successfully"})
 }

@@ -2,3 +2,5 @@
 keylogger_server.exe
 server/logs/*
 server/keys/*
+server/keylogger-poc-firebase-adminsdk-*
+.env

@@ -1,9 +1,15 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
+	"path/filepath"
+	"syscall"
+
+	"github.com/joho/godotenv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,8 +20,6 @@ const KEYS_DIR = "./keys"
 const PRIVATE_KEY_FILE = "server_private.pem"
 const PUBLIC_KEY_FILE = "server_public.pem"
 const MAX_LOG_CHARACTERS = 500
-
-// const TEMPLATE_DIR = "templates/*"
 
 type SystemInfo struct {
 	SystemID     string `json:"system_id"`
@@ -44,13 +48,56 @@ type LogPageData struct {
 	LogFiles []LogFile
 }
 
-// func temp(c *gin.Context) {
-// 	fmt.Println("temp handler called")
-// }
+var logSaver LogSaver
 
 func main() {
-	if err := os.MkdirAll(LOGS_DIR, 0755); err != nil {
-		log.Fatalf("ERROR: Failed to create base logs directory '%s': %v", LOGS_DIR, err)
+
+	enableLocalLogs := flag.Bool("local-logs", false, "Enable saving logs ONLY to local files (disables Firebase).")
+	flag.Parse()
+
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("WARNING: No .env file found or could not load .env file:", err)
+	}
+
+	if *enableLocalLogs {
+		// Use FileSaver if -local-logs flag is set
+		logSaver = &FileSaver{LogDirectory: LOGS_DIR}
+		log.Printf("Log saving: Local files ONLY. Logs will be saved to: %s", LOGS_DIR)
+		if err := os.MkdirAll(LOGS_DIR, 0755); err != nil {
+			log.Fatalf("ERROR: Failed to create base logs directory '%s': %v", LOGS_DIR, err)
+		}
+	} else {
+		// Default to FirebaseSaver if -local-logs flag is NOT set
+		serviceAccountKeyFilename := os.Getenv("FIREBASE_SERVICE_ACCOUNT_KEY_FILENAME")
+		if serviceAccountKeyFilename == "" {
+			log.Fatal("ERROR: FIREBASE_SERVICE_ACCOUNT_KEY_FILENAME environment variable not set. It's required for Firebase saving (default mode).")
+		}
+		currentDir, err := os.Getwd()
+		if err != nil {
+			log.Fatalf("ERROR: Could not get current working directory: %v", err)
+		}
+		serviceAccountKeyPath := filepath.Join(currentDir, serviceAccountKeyFilename)
+
+		if _, err := os.Stat(serviceAccountKeyPath); os.IsNotExist(err) {
+			log.Fatalf("ERROR: Firebase service account key file not found at: %s", serviceAccountKeyPath)
+		}
+
+		if err := InitializeFirebase(serviceAccountKeyPath); err != nil {
+			log.Fatalf("ERROR: Failed to initialize Firebase: %v", err)
+		}
+		logSaver = &FirebaseSaver{}
+		log.Println("Log saving: Firebase ONLY (default).")
+
+		// Ensure Firebase client is closed on program exit ONLY if Firebase was initialized
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
+		go func() {
+			<-c
+			log.Println("Received interrupt signal, shutting down gracefully...")
+			CloseFirebase()
+			os.Exit(0)
+		}()
 	}
 
 	// set up RSA keys
