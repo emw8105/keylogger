@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"syscall"
 
 	"github.com/joho/godotenv"
@@ -69,15 +68,10 @@ func main() {
 		}
 	} else {
 		// Default to FirebaseSaver if -local-logs flag is NOT set
-		serviceAccountKeyFilename := os.Getenv("FIREBASE_SERVICE_ACCOUNT_KEY_FILENAME")
-		if serviceAccountKeyFilename == "" {
-			log.Fatal("ERROR: FIREBASE_SERVICE_ACCOUNT_KEY_FILENAME environment variable not set. It's required for Firebase saving (default mode).")
+		serviceAccountKeyPath := os.Getenv("FIREBASE_SERVICE_ACCOUNT_KEY_PATH")
+		if serviceAccountKeyPath == "" {
+			log.Fatalf("ERROR: Firebase service account key path not set in environment variable FIREBASE_SERVICE_ACCOUNT_KEY_PATH")
 		}
-		currentDir, err := os.Getwd()
-		if err != nil {
-			log.Fatalf("ERROR: Could not get current working directory: %v", err)
-		}
-		serviceAccountKeyPath := filepath.Join(currentDir, serviceAccountKeyFilename)
 
 		if _, err := os.Stat(serviceAccountKeyPath); os.IsNotExist(err) {
 			log.Fatalf("ERROR: Firebase service account key file not found at: %s", serviceAccountKeyPath)

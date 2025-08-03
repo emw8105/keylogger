@@ -1,6 +1,8 @@
 /logger/keylogs.txt
 keylogger_server.exe
+keylogger_server
 server/logs/*
 server/keys/*
 server/keylogger-poc-firebase-adminsdk-*
 .env
+*.pem
