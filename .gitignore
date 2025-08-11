@@ -1,8 +1,76 @@
-/logger/keylogs.txt
-keylogger_server.exe
-keylogger_server
-server/logs/*
-server/keys/*
-server/keylogger-poc-firebase-adminsdk-*
+# monorepo root gitignore
+
+# --- Python specific ignores ---
+# Compiled Python files
+__pycache__/
+*.pyc
+*.pyd
+*.pyo
+
+# Virtual environments
+venv/
+.venv/
+env/
+# Common locations for virtual environment directories inside subfolders
+*/venv/
+*/.venv/
+*/env/
+
+# PyInstaller artifacts (for the logger directory)
+# Assuming your Python script is `logger/script.py`
+logger/build/
+logger/dist/
+logger/*.spec # Ignores `logger/script.spec`
+
+# --- Go specific ignores ---
+# Compiled Go binaries
+# Assuming your Go server binary is named `keylogger_server` and is built in `server/`
+server/keylogger_server
+# If `keylogger_server.exe` can appear at the root or other places during local builds
+keylogger_server.exe # From your existing .gitignore
+keylogger_server     # From your existing .gitignore (covers non-.exe builds at root)
+
+# --- Node.js / Next.js / Frontend (for the client directory) ---
+# Node modules
+client/node_modules/
+
+# Next.js build output
+client/.next/
+client/out/ # For static exports if used
+
+# Vercel deployment cache/config
+client/.vercel/
+
+# envs
 .env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+
+# --- Application-generated Logs, Keys, and Sensitive Files ---
+# locally generated logs
+server/logs/*
+
+# keys
+server/keylogger-poc-firebase-adminsdk-*
 *.pem
+server/keys/*
+
+# If your server creates logs/keys directories directly in the repo root (based on service config)
+server/logs/
+
+
+# --- General ignores ---
+.vscode/        # Visual Studio Code settings (optional: commit if you want to share workspace settings)
+.idea/          # IntelliJ IDEA settings
+*.sublime-project
+*.sublime-workspace
+*.swp           # Vim swap files
+*.swo           # Vim swap files
+
+.DS_Store       # macOS generated files
+Thumbs.db       # Windows generated files
+
+*.tmp
+*~
