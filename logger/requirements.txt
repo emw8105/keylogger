@@ -1,0 +1,5 @@
+pynput
+requests
+pygetwindow
+cryptography
+pyinstaller
