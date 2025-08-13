@@ -35,9 +35,6 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-16 text-center">
         <div className="max-w-4xl mx-auto">
-          <Badge variant="secondary" className="mb-4 bg-gradient-to-r from-cyan-500 to-purple-500 text-white border-0">
-            Live Demo Tool
-          </Badge>
           <h1 className="text-5xl font-bold text-white mb-6 leading-tight">
             Remote{" "}
             <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
