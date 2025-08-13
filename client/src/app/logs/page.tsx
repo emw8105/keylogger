@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import Navbar from "@/components/navbar"
 import {
     Terminal,
     ArrowLeft,
@@ -151,32 +152,7 @@ export default function LogsPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-            {/* Header */}
-            <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur-sm sticky top-0 z-50">
-                <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                        <Link href="/">
-                            <Button variant="ghost" size="sm" className="text-slate-300 hover:text-cyan-400 hover:bg-slate-800">
-                                <ArrowLeft className="h-4 w-4 mr-2" />
-                                Back
-                            </Button>
-                        </Link>
-                        <div className="flex items-center space-x-2">
-                            <Eye className="h-8 w-8 text-cyan-400" />
-                            <h1 className="text-xl font-bold text-white">Live Logs</h1>
-                        </div>
-                    </div>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex items-center space-x-2 bg-transparent border-cyan-400 text-cyan-400 hover:bg-cyan-400 hover:text-slate-900"
-                        onClick={() => window.location.reload()}
-                    >
-                        <RefreshCw className="h-4 w-4" />
-                        <span>Refresh</span>
-                    </Button>
-                </div>
-            </header>
+            <Navbar currentPage="logs" />
 
             <div className="container mx-auto px-4 py-8">
                 {/* Page Header */}
