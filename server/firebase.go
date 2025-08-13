@@ -46,21 +46,22 @@ func CloseFirebase() {
 	}
 }
 
+// represents a single log entry in Firestore
 type LogEntry struct {
-	SystemInfo         `firestore:"systemInfo"`
 	LogStartTimeUTC    string    `firestore:"logStartTimeUTC"`
 	LogDurationSeconds float64   `firestore:"logDurationSeconds"`
 	LoggedContent      string    `firestore:"loggedContent"`
+	ActiveWindow       string    `firestore:"activeWindow"`
 	ServerTimestamp    time.Time `firestore:"serverTimestamp"`
 }
 
+// represents top-level static information about a client system for easy querying on the site
 type FirebaseSystemInfo struct {
-	SystemID     string `firestore:"systemID"`
-	Hostname     string `firestore:"hostname"`
-	OS           string `firestore:"os"`
-	OSRelease    string `firestore:"osRelease"`
-	Username     string `firestore:"username"`
-	ActiveWindow string `firestore:"activeWindow"`
+	SystemID  string `firestore:"systemID"`
+	Hostname  string `firestore:"hostname"`
+	OS        string `firestore:"os"`
+	OSRelease string `firestore:"osRelease"`
+	Username  string `firestore:"username"`
 }
 
 func logErrorf(format string, args ...interface{}) error {
