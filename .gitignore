@@ -24,13 +24,10 @@ logger/*.spec # Ignores `logger/script.spec`
 
 # --- Go specific ignores ---
 # Compiled Go binaries
-# Assuming your Go server binary is named `keylogger_server` and is built in `server/`
 server/keylogger_server
-# If `keylogger_server.exe` can appear at the root or other places during local builds
-keylogger_server.exe # From your existing .gitignore
-keylogger_server     # From your existing .gitignore (covers non-.exe builds at root)
+server/keylogger_server.exe
 
-# --- Node.js / Next.js / Frontend (for the client directory) ---
+# --- Node.js / Next.js / Frontend client directory ---
 # Node modules
 client/node_modules/
 
@@ -47,6 +44,7 @@ client/.vercel/
 .env.test.local
 .env.production.local
 .env.local
+client/next-env.d.ts
 
 # --- Application-generated Logs, Keys, and Sensitive Files ---
 # locally generated logs
@@ -57,7 +55,7 @@ server/keylogger-poc-firebase-adminsdk-*
 *.pem
 server/keys/*
 
-# If your server creates logs/keys directories directly in the repo root (based on service config)
+# for locally generated logs
 server/logs/
 
 
