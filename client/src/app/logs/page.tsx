@@ -17,7 +17,6 @@ import {
     Monitor,
     Clock,
     User,
-    Eye,
     ChevronDown,
     ChevronRight,
     Keyboard,
@@ -34,11 +33,11 @@ interface SystemSummary {
 }
 
 interface LogEntry {
-    logStartTimeUTC: string;
-    logDurationSeconds: number;
-    loggedContent: string;
-    activeWindow: string;
-    serverTimestamp: string;
+    LogStartTimeUTC: string;
+    LogDurationSeconds: number;
+    LoggedContent: string;
+    ActiveWindow: string;
+    ServerTimestamp: string;
 }
 
 interface SystemGroup extends SystemSummary {
@@ -47,18 +46,25 @@ interface SystemGroup extends SystemSummary {
 }
 
 export default function LogsPage() {
-    const [systems, setSystems] = useState<SystemGroup[]>([])
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
+    const [systems, setSystems] = useState<SystemGroup[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const fetchAllSystemData = async () => {
         setLoading(true);
         setError(null);
 
-        const goServerBaseUrl = process.env.NEXT_PUBLIC_SERVER_BASE_URL
+        const goServerBaseUrl = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
+
+        if (!goServerBaseUrl) {
+            setError(
+                "Server URL not configured. Please set NEXT_PUBLIC_SERVER_BASE_URL in your .env.local file."
+            );
+            setLoading(false);
+            return;
+        }
 
         try {
-            // 1. Fetch all system summaries
             const systemsResponse = await fetch(`${goServerBaseUrl}/api/getSystems`);
             if (!systemsResponse.ok) {
                 throw new Error(
@@ -68,12 +74,16 @@ export default function LogsPage() {
             const { systems: systemSummaries }: { systems: SystemSummary[] } =
                 await systemsResponse.json();
 
-            // 2. For each system, fetch its logs concurrently
+
             const systemGroupsPromises = systemSummaries.map(async (system) => {
-                const logsResponse = await fetch(`${goServerBaseUrl}/api/getLogs/${system.systemId}/logs`);
+                const logsResponse = await fetch(
+                    `${goServerBaseUrl}/api/getLogs/${system.systemId}/logs`
+                );
                 if (!logsResponse.ok) {
-                    console.warn(`Failed to fetch logs for system ${system.systemId}: ${logsResponse.statusText}`);
-                    return { ...system, logs: [], expanded: false }; // Return system with empty logs on error
+                    console.warn(
+                        `Failed to fetch logs for system ${system.systemId}: ${logsResponse.statusText}`
+                    );
+                    return { ...system, logs: [], expanded: false };
                 }
                 const { logs }: { logs: LogEntry[] } = await logsResponse.json();
 
@@ -105,15 +115,18 @@ export default function LogsPage() {
     };
 
     const formatTimestamp = (timestamp: string) => {
-        // Attempt to parse and format. If invalid, return original string.
         try {
             return new Date(timestamp).toLocaleString();
-        } catch {
-            return timestamp;
+        } catch (e) {
+            console.error("Error formatting timestamp:", timestamp, e);
+            return "Invalid Date"; // if timestamp is invalid
         }
     };
 
     const formatDuration = (seconds: number) => {
+        if (typeof seconds !== 'number' || isNaN(seconds)) {
+            return "N/A"; // if seconds isnt a valid number
+        }
         return `${seconds.toFixed(2)}s`;
     };
 
@@ -216,37 +229,43 @@ export default function LogsPage() {
                                         <CardContent className="pt-0">
                                             <div className="space-y-4">
                                                 {system.logs.length === 0 ? (
-                                                    <div className="text-center py-4 text-slate-400">No logs found for this system.</div>
+                                                    <div className="text-center py-4 text-slate-400">
+                                                        No logs found for this system.
+                                                    </div>
                                                 ) : (
                                                     system.logs.map((log, index) => (
                                                         <div
-                                                            key={index} // Use index as key if logs don't have unique IDs
+                                                            key={index}
                                                             className="bg-slate-900/50 rounded-lg p-4 border border-slate-600 hover:border-slate-500 transition-colors"
                                                         >
                                                             <div className="flex items-start justify-between mb-3">
                                                                 <div className="flex items-center space-x-2">
                                                                     <Keyboard className="h-4 w-4 text-purple-400" />
                                                                     <span className="text-sm text-slate-400">
-                                                                        {formatTimestamp(log.serverTimestamp)}
+                                                                        {formatTimestamp(log.ServerTimestamp)}
                                                                     </span>
                                                                 </div>
                                                                 <div className="flex items-center space-x-4 text-sm text-slate-400">
                                                                     <div className="flex items-center space-x-1">
                                                                         <Clock className="h-3 w-3" />
-                                                                        <span>{formatDuration(log.logDurationSeconds)}</span>
+                                                                        <span>
+                                                                            {formatDuration(log.LogDurationSeconds)}
+                                                                        </span>
                                                                     </div>
                                                                 </div>
                                                             </div>
 
                                                             <div className="bg-slate-800/50 rounded p-3 mb-3">
                                                                 <p className="text-cyan-300 font-mono text-sm break-all">
-                                                                    "{log.loggedContent}"
+                                                                    "{log.LoggedContent}"
                                                                 </p>
                                                             </div>
 
                                                             <div className="text-xs text-slate-500">
-                                                                <span className="font-medium">Active Window:</span>{" "}
-                                                                {log.activeWindow}
+                                                                <span className="font-medium">
+                                                                    Active Window:
+                                                                </span>{" "}
+                                                                {log.ActiveWindow}
                                                             </div>
                                                         </div>
                                                     ))
