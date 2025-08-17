@@ -101,8 +101,14 @@ func main() {
 
 	router := gin.Default()
 
+	// script endpoints
 	router.GET("/handshake", handshakeHandler)
 	router.POST("/log", logHandler)
+
+	// site endpoints
+	router.GET("/getSystems", systemsHandler)
+	router.GET("/getLogs/:systemId", systemLogsHandler)
+	// also need router.GET(download)
 
 	fmt.Printf("Go server listening on http://localhost%s\n", SERVER_PORT)
 	log.Printf("Keys will be stored in: %s", KEYS_DIR)

@@ -13,7 +13,6 @@ export async function GET() {
         hostname: "DESKTOP-76GNVR1",
         username: "EMW81",
         os: "Windows 11",
-        logCount: 2,
         lastActivity: "2025-08-11T16:12:15.456789Z",
       },
       {
@@ -21,7 +20,6 @@ export async function GET() {
         hostname: "LAPTOP-ABC123",
         username: "TestUser",
         os: "Windows 10",
-        logCount: 1,
         lastActivity: "2025-08-11T14:30:45.123456Z",
       },
     ]

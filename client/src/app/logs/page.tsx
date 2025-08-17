@@ -228,9 +228,6 @@ export default function LogsPage() {
                                                     </CardDescription>
                                                 </div>
                                             </div>
-                                            <Badge variant="outline" className="border-cyan-400 text-cyan-400">
-                                                {system.logs.length} log{system.logs.length !== 1 ? "s" : ""}
-                                            </Badge>
                                         </div>
                                     </CardHeader>
 
