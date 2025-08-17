@@ -33,6 +33,9 @@ scp -i "${SSH_KEY_PATH}" "./${LOCAL_BINARY_NAME}" "${EC2_USER}@${EC2_HOST}:${REM
 echo "--- Copying the Firebase service account key to EC2 ---"
 scp -i "${SSH_KEY_PATH}" "${LOCAL_FIREBASE_KEY_PATH}" "${EC2_USER}@${EC2_HOST}:${REMOTE_FIREBASE_KEY_PATH}"
 
+echo "--- Copying .env file to EC2 ---"
+scp -i "$SSH_KEY_PATH" ./.env "$EC2_USER@$EC2_HOST:/home/$EC2_USER/"
+
 # ssh into ec2 and restart service
 echo "--- Connecting to EC2 for deployment and restarting service ---"
 ssh -i "${SSH_KEY_PATH}" "${EC2_USER}@${EC2_HOST}" << EOF_SSH_CMDS
