@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -23,6 +23,7 @@ import {
     RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
+import { error } from "console";
 
 interface SystemSummary {
     systemId: string;
@@ -41,26 +42,29 @@ interface LogEntry {
 }
 
 interface SystemGroup extends SystemSummary {
-    logs: LogEntry[];
+    logs: LogEntry[] | null;
     expanded: boolean;
+    loadingLogs: boolean;
+    logsError: string | null;
 }
 
 export default function LogsPage() {
     const [systems, setSystems] = useState<SystemGroup[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [loadingSystems, setLoadingSystems] = useState(true);
+    const [systemsError, setSystemsError] = useState<string | null>(null);
 
-    const fetchAllSystemData = async () => {
-        setLoading(true);
-        setError(null);
+    const goServerBaseUrl = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
 
-        const goServerBaseUrl = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
+
+    const fetchSystemSummaries = useCallback(async () => {
+        setLoadingSystems(true);
+        setSystemsError(null);
 
         if (!goServerBaseUrl) {
-            setError(
+            setSystemsError(
                 "Server URL not configured. Please set NEXT_PUBLIC_SERVER_BASE_URL in your .env.local file."
             );
-            setLoading(false);
+            setLoadingSystems(false);
             return;
         }
 
@@ -74,43 +78,112 @@ export default function LogsPage() {
             const { systems: systemSummaries }: { systems: SystemSummary[] } =
                 await systemsResponse.json();
 
+            // initially systems will have empty logs and loading state, logs will be fetched on expand
+            setSystems(
+                systemSummaries.map((system) => ({
+                    ...system,
+                    logs: null,
+                    expanded: false,
+                    loadingLogs: false,
+                    logsError: null,
+                }))
+            );
+        } catch (err: any) {
+            console.error("Error fetching system summaries:", err);
+            setSystemsError(err.message || "Failed to load systems. Please try again.");
+        } finally {
+            setLoadingSystems(false);
+        }
+    }, [goServerBaseUrl]); // we depend on goServerBaseUrl to ensure it is up-to-date
 
-            const systemGroupsPromises = systemSummaries.map(async (system) => {
+    const fetchLogsForSystem = useCallback(
+        async (systemId: string) => {
+
+            // set loading state and clear errors for the specific system before fetching logs
+            // also set the loading state to true to indicate logs are being fetched
+            setSystems((prev) =>
+                prev.map((s) =>
+                    s.systemId === systemId ? { ...s, loadingLogs: true, logsError: null } : s
+                )
+            );
+
+            // if the server URL isn't configured, prevent fetching logs
+            if (!goServerBaseUrl) {
+                setSystems((prev) =>
+                    prev.map((s) =>
+                        s.systemId === systemId
+                            ? {
+                                ...s,
+                                loadingLogs: false,
+                                logsError:
+                                    "Server URL not configured for log fetching.",
+                            }
+                            : s
+                    )
+                );
+                return;
+            }
+
+            // fetch logs for the specific system
+            try {
                 const logsResponse = await fetch(
-                    `${goServerBaseUrl}/api/getLogs/${system.systemId}/logs`
+                    `${goServerBaseUrl}/api/getLogs/${systemId}/logs`
                 );
                 if (!logsResponse.ok) {
-                    console.warn(
-                        `Failed to fetch logs for system ${system.systemId}: ${logsResponse.statusText}`
+                    throw new Error(
+                        `Failed to fetch logs: ${logsResponse.statusText}`
                     );
-                    return { ...system, logs: [], expanded: false };
                 }
                 const { logs }: { logs: LogEntry[] } = await logsResponse.json();
 
-                return { ...system, logs, expanded: false };
-            });
-
-            const fetchedSystemGroups = await Promise.all(systemGroupsPromises);
-            setSystems(fetchedSystemGroups);
-        } catch (err: any) {
-            console.error("Error fetching data:", err);
-            setError(err.message || "Failed to load logs. Please try again.");
-        } finally {
-            setLoading(false);
-        }
-    };
+                // update the system with fetched logs and reset loading state
+                setSystems((prev) =>
+                    prev.map((s) =>
+                        s.systemId === systemId
+                            ? { ...s, logs, loadingLogs: false, logsError: null }
+                            : s
+                    )
+                );
+            } catch (err: any) {
+                console.error(`Error fetching logs for ${systemId}:`, err);
+                setSystems((prev) =>
+                    prev.map((s) =>
+                        s.systemId === systemId
+                            ? {
+                                ...s,
+                                logs: [], // set logs to empty array if error occurs
+                                loadingLogs: false,
+                                logsError: err.message || "Failed to load logs for this system.",
+                            }
+                            : s
+                    )
+                );
+            }
+        },
+        [goServerBaseUrl]
+    );
 
     useEffect(() => {
-        fetchAllSystemData();
-    }, []); // Run once on component mount
+        fetchSystemSummaries(); // only fetch the system summaries on initial load
+    }, [fetchSystemSummaries]);
 
     const toggleSystem = (systemId: string) => {
         setSystems((prev) =>
-            prev.map((system) =>
-                system.systemId === systemId
-                    ? { ...system, expanded: !system.expanded }
-                    : system
-            )
+            prev.map((system) => {
+                if (system.systemId === systemId) {
+                    // if already expanded, just collapse it
+                    if (system.expanded) {
+                        return { ...system, expanded: false };
+                    } else {
+                        // if not expanded and logs are not loaded, fetch them
+                        if (system.logs === null && !system.loadingLogs) {
+                            fetchLogsForSystem(system.systemId);
+                        }
+                        return { ...system, expanded: true };
+                    }
+                }
+                return system;
+            })
         );
     };
 
@@ -150,39 +223,39 @@ export default function LogsPage() {
                         timestamp.
                     </p>
                     <Button
-                        onClick={fetchAllSystemData}
+                        onClick={fetchSystemSummaries}
                         variant="ghost"
                         className="mt-4 text-cyan-400 hover:text-cyan-300 hover:bg-slate-800/50"
                     >
-                        <RefreshCw className="h-4 w-4 mr-2" /> Refresh Logs
+                        <RefreshCw className="h-4 w-4 mr-2" /> Refresh Systems
                     </Button>
                 </div>
 
-                {/* Loading State */}
-                {loading && (
+                {/* Loading State for Systems */}
+                {loadingSystems && (
                     <div className="text-center py-12">
                         <RefreshCw className="h-8 w-8 text-cyan-400 animate-spin mx-auto mb-4" />
-                        <p className="text-slate-300">Loading logs...</p>
+                        <p className="text-slate-300">Loading systems...</p>
                     </div>
                 )}
 
-                {/* Error State */}
-                {error && (
+                {/* Error State for Systems */}
+                {systemsError && (
                     <div className="text-center py-12">
                         <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-6 max-w-md mx-auto">
-                            <p className="text-red-300">{error}</p>
+                            <p className="text-red-300">{systemsError}</p>
                         </div>
                     </div>
                 )}
 
                 {/* Systems List */}
-                {!loading && !error && (
+                {!loadingSystems && !systemsError && (
                     <div className="space-y-6">
                         {systems.length === 0 ? (
                             <div className="text-center py-12">
                                 <Terminal className="h-12 w-12 text-slate-500 mx-auto mb-4" />
                                 <p className="text-slate-400">
-                                    No logs available yet. Be the first to contribute!
+                                    No systems available yet. Be the first to contribute!
                                 </p>
                             </div>
                         ) : (
@@ -228,12 +301,22 @@ export default function LogsPage() {
                                     {system.expanded && (
                                         <CardContent className="pt-0">
                                             <div className="space-y-4">
-                                                {system.logs.length === 0 ? (
+                                                {/* Loading State for Individual Logs */}
+                                                {system.loadingLogs ? (
+                                                    <div className="text-center py-4 text-slate-400">
+                                                        <RefreshCw className="h-5 w-5 text-cyan-400 animate-spin mx-auto mb-2" />
+                                                        Loading logs for this system...
+                                                    </div>
+                                                ) : system.logsError ? (
+                                                    <div className="text-center py-4 text-red-400">
+                                                        Error loading logs: {system.logsError}
+                                                    </div>
+                                                ) : system.logs?.length === 0 ? (
                                                     <div className="text-center py-4 text-slate-400">
                                                         No logs found for this system.
                                                     </div>
                                                 ) : (
-                                                    system.logs.map((log, index) => (
+                                                    system.logs?.map((log, index) => (
                                                         <div
                                                             key={index}
                                                             className="bg-slate-900/50 rounded-lg p-4 border border-slate-600 hover:border-slate-500 transition-colors"
@@ -262,9 +345,7 @@ export default function LogsPage() {
                                                             </div>
 
                                                             <div className="text-xs text-slate-500">
-                                                                <span className="font-medium">
-                                                                    Active Window:
-                                                                </span>{" "}
+                                                                <span className="font-medium">Active Window:</span>{" "}
                                                                 {log.ActiveWindow}
                                                             </div>
                                                         </div>
