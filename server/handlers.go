@@ -79,10 +79,10 @@ type SystemSummary struct {
 	Username  string `json:"username"`
 }
 
-// systemsHandler retrieves a summary of all systems from Firestore
-func systemsHandler(c *gin.Context) {
+// getSystemsHandler retrieves a summary of all systems from Firestore
+func getSystemsHandler(c *gin.Context) {
 	if firestoreClient == nil {
-		logErrorf("systemsHandler: Firestore client not initialized.")
+		logErrorf("getSystemsHandler: Firestore client not initialized.")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Firestore not available"})
 		return
 	}
@@ -98,14 +98,14 @@ func systemsHandler(c *gin.Context) {
 			break
 		}
 		if err != nil {
-			logErrorf("systemsHandler: error iterating systems documents: %v", err)
+			logErrorf("getSystemsHandler: error iterating systems documents: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve systems"})
 			return
 		}
 
 		var sysInfo FirebaseSystemInfo
 		if err := doc.DataTo(&sysInfo); err != nil {
-			logErrorf("systemsHandler: error mapping document to SystemInfo: %v", err)
+			logErrorf("getSystemsHandler: error mapping document to SystemInfo: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process system data"})
 			return
 		}
@@ -120,19 +120,20 @@ func systemsHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"systems": systems})
-	log.Println("systemsHandler: Successfully retrieved system summaries.")
+	log.Println("getSystemsHandler: Successfully retrieved system summaries.")
 }
 
-func systemLogsHandler(c *gin.Context) {
+// getSystemsLogsHandler retrieves logs for a specific system from Firestore
+func getSystemLogsHandler(c *gin.Context) {
 	if firestoreClient == nil {
-		logErrorf("systemLogsHandler: Firestore client not initialized.")
+		logErrorf("getSystemLogsHandler: Firestore client not initialized.")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Firestore not available"})
 		return
 	}
 
 	systemID := c.Param("systemId")
 	if systemID == "" {
-		logErrorf("systemLogsHandler: Missing systemId parameter.")
+		logErrorf("getSystemLogsHandler: Missing systemId parameter.")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "System ID is required"})
 		return
 	}
@@ -149,14 +150,14 @@ func systemLogsHandler(c *gin.Context) {
 			break
 		}
 		if err != nil {
-			logErrorf("systemLogsHandler: error iterating log batches for system %s: %v", systemID, err)
+			logErrorf("getSystemLogsHandler: error iterating log batches for system %s: %v", systemID, err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve logs"})
 			return
 		}
 
 		var logEntry LogEntry
 		if err := doc.DataTo(&logEntry); err != nil {
-			logErrorf("systemLogsHandler: error mapping log document to LogEntry for system %s: %v", systemID, err)
+			logErrorf("getSystemLogsHandler: error mapping log document to LogEntry for system %s: %v", systemID, err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process log data"})
 			return
 		}
@@ -164,5 +165,5 @@ func systemLogsHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"logs": logs})
-	log.Printf("systemLogsHandler: Successfully retrieved %d logs for system %s.", len(logs), systemID)
+	log.Printf("getSystemLogsHandler: Successfully retrieved %d logs for system %s.", len(logs), systemID)
 }

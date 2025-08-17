@@ -101,14 +101,19 @@ func main() {
 
 	router := gin.Default()
 
-	// script endpoints
-	router.GET("/handshake", handshakeHandler)
-	router.POST("/log", logHandler)
+	apiGroup := router.Group("/api")
+	{
+		// script endpoints
+		apiGroup.GET("/handshake", handshakeHandler)
+		apiGroup.POST("/log", logHandler)
 
-	// site endpoints
-	router.GET("/getSystems", systemsHandler)
-	router.GET("/getLogs/:systemId", systemLogsHandler)
-	// also need router.GET(download)
+		// site endpoints
+		apiGroup.GET("/getSystems", getSystemsHandler)
+		apiGroup.GET("/getLogs/:systemId/logs", getSystemLogsHandler)
+	}
+
+	// wont be in api group because it's for static files
+	// also need router.GET(downloads)
 
 	fmt.Printf("Go server listening on http://localhost%s\n", SERVER_PORT)
 	log.Printf("Keys will be stored in: %s", KEYS_DIR)
