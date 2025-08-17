@@ -55,15 +55,6 @@ type LogEntry struct {
 	ServerTimestamp    time.Time `firestore:"serverTimestamp"`
 }
 
-// represents top-level static information about a client system for easy querying on the site
-type FirebaseSystemInfo struct {
-	SystemID  string `firestore:"systemID"`
-	Hostname  string `firestore:"hostname"`
-	OS        string `firestore:"os"`
-	OSRelease string `firestore:"osRelease"`
-	Username  string `firestore:"username"`
-}
-
 func logErrorf(format string, args ...interface{}) error {
 	log.Printf(format, args...)
 	return fmt.Errorf(format, args...)

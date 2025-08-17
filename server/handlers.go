@@ -71,14 +71,6 @@ func logHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Log batch received successfully"})
 }
 
-type SystemSummary struct {
-	SystemID  string `json:"systemId"`
-	Hostname  string `json:"hostname"`
-	OS        string `json:"os"`
-	OSRelease string `json:"osRelease"`
-	Username  string `json:"username"`
-}
-
 // getSystemsHandler retrieves a summary of all systems from Firestore
 func getSystemsHandler(c *gin.Context) {
 	if firestoreClient == nil {
@@ -91,7 +83,7 @@ func getSystemsHandler(c *gin.Context) {
 	iter := systemsCollection.Documents(ctx)
 	defer iter.Stop()
 
-	var systems []SystemSummary
+	var systems []SystemInfo
 	for {
 		doc, err := iter.Next()
 		if err == iterator.Done {
@@ -103,20 +95,14 @@ func getSystemsHandler(c *gin.Context) {
 			return
 		}
 
-		var sysInfo FirebaseSystemInfo
+		var sysInfo SystemInfo
 		if err := doc.DataTo(&sysInfo); err != nil {
 			logErrorf("getSystemsHandler: error mapping document to SystemInfo: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process system data"})
 			return
 		}
 
-		systems = append(systems, SystemSummary{
-			SystemID:  sysInfo.SystemID,
-			Hostname:  sysInfo.Hostname,
-			OS:        sysInfo.OS,
-			OSRelease: sysInfo.OSRelease,
-			Username:  sysInfo.Username,
-		})
+		systems = append(systems, sysInfo)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"systems": systems})
