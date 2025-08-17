@@ -75,16 +75,16 @@ func (fs *FirebaseSaver) Save(payload LogPayload, decryptedContent string) error
 	systemsCollection := firestoreClient.Collection("systems")
 	systemDocRef := systemsCollection.Doc(systemID)
 
-	systemData := FirebaseSystemInfo{
-		SystemID:  systemID,
-		Hostname:  payload.SystemInfo.Hostname,
-		OS:        payload.SystemInfo.OS,
-		OSRelease: payload.SystemInfo.OSRelease,
-		Username:  payload.SystemInfo.Username,
+	systemDataMap := map[string]interface{}{
+		"systemID":  systemID,
+		"hostname":  payload.SystemInfo.Hostname,
+		"os":        payload.SystemInfo.OS,
+		"osRelease": payload.SystemInfo.OSRelease,
+		"username":  payload.SystemInfo.Username,
 	}
 
 	// Use Set with firestore.MergeAll to update existing or create new document
-	_, err := systemDocRef.Set(ctx, systemData, firestore.MergeAll)
+	_, err := systemDocRef.Set(ctx, systemDataMap, firestore.MergeAll)
 	if err != nil {
 		return fmt.Errorf("FirebaseSaver: failed to save/update system info for %s: %w", systemID, err)
 	}
