@@ -18,7 +18,7 @@ export async function GET() {
       );
     }
 
-    const response = await fetch(`${goServerBaseUrl}/api/systems`);
+    const response = await fetch(`${goServerBaseUrl}/api/getSystems`);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));

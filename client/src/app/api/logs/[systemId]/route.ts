@@ -24,7 +24,7 @@ export async function GET(
     }
 
     const response = await fetch(
-      `${goServerBaseUrl}/api/systems/${systemId}/logs`
+      `${goServerBaseUrl}/api/getLogs/${systemId}/logs`
     );
 
     if (!response.ok) {
