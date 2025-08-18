@@ -136,7 +136,52 @@ A React-based web application serving as the project's public interface.
       ./deploy.sh
      ```
 2. Python Client (Keylogger) Build & Deployment
-3. Next.js Web Client Setup
+   The keylogger client is distributed as a pre-built Windows executable.
+   - **Install Python Dependencies**:
+     ```bash
+      cd logger/
+      pip install -r requirements.txt pyinstaller
+     ```
+   - **Build Executable**:
+     - The web client is configured with the Windows executable already, but all users can use this script to build a system-integrated version of the keylogger script
+     ```bash
+      cd logger/
+      ./build_local.sh
+     ```
+     - This creates a Keylogger executable application in the `logger/dist` directory.
+     - Test this executable locally to ensure it functions as expected.
+     - With a running server, the logs recorded by the script should appear in Firebase.
+   - **Deploy Executable to S3**:
+     ```bash
+      cd logger/
+      ./deploy_logger.sh
+     ```
+     - This script uploads the Keylogger executable (Keylogger_windows.exe for windows) to the S3 bucket at the path `executables/windows/Keylogger_windows.exe`.
+     - Requires an AWS CLI profile configured with the necessary `s3:PutObject` permissions for authentication.
+4. Next.js Web Client Setup
+  - **Environment Variables**: Create a `.env.local` file in the `client/` directory.
+    ```
+    NEXT_PUBLIC_SERVER_BASE_URL=http://localhost:8080 # or your deployed Go server URL (e.g. EC2)
+    NEXT_PUBLIC_WINDOWS_DOWNLOAD_URL=https://keylogger-project.s3.us-east-1.amazonaws.com/executables/windows/Keylogger_windows.exe # S3 download URL for the bucket of executables
+    ```
+  - **Install Dependencies**:
+    ```bash
+      cd client/
+      npm install
+     ```
+  - **Run Locally**:
+    ```bash
+      npm run dev
+     ```
+  - **Deploy to Vercel (Example)**:
+This project can be easily deployed to Vercel by linking the GitHub repository; additional Cloudflare configuration can be applied to host it through Vercel at a desired domain.
+
+## Contributing
+Feel free to fork this repository, explore the code, and contribute to its development.
+Please adhere to the educational and non-malicious intent of this project.
+---
+**Disclaimer**: This software is provided for educational and demonstrative purposes only. The authors are not responsible for any misuse or damage caused by this software. Use it responsibly and ethically.
+
 
 
 
