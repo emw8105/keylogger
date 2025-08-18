@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Download, Eye, Terminal, Code, Database, Github, ExternalLink } from "lucide-react"
 import Navbar from "@/components/navbar"
 import Link from "next/link"
@@ -9,7 +8,6 @@ import { JSX, SVGProps } from "react"
 export default function HomePage() {
 
   const WINDOWS_DOWNLOAD_URL = process.env.NEXT_PUBLIC_WINDOWS_DOWNLOAD_URL ? process.env.NEXT_PUBLIC_WINDOWS_DOWNLOAD_URL : "";
-  console.log(WINDOWS_DOWNLOAD_URL)
   const WindowsIcon = (props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -116,7 +114,7 @@ export default function HomePage() {
                 </CardHeader>
                 <CardContent>
                   <CardDescription className="text-slate-300 space-y-3">
-                    <p>Option 1: Type "keylogger kill" anywhere in your system</p>
+                    <p>Option 1: Type &quot;keylogger kill&quot; anywhere in your system</p>
                     <p>Option 2: End the process via Task Manager</p>
                     <p>Option 3: Restart your computer</p>
                     <p>Verify termination by checking Task Manager</p>
@@ -225,7 +223,7 @@ export default function HomePage() {
               <div className="bg-slate-800/30 rounded-lg p-6 border border-slate-700">
                 <h3 className="text-xl font-semibold text-white mb-4">Client Process</h3>
                 <ol className="space-y-2 text-slate-300 list-decimal list-inside">
-                  <li>Fetches server's RSA public key via handshake</li>
+                  <li>Fetches server&apos;s RSA public key via handshake</li>
                   <li>Generates AES-256 session key</li>
                   <li>Captures system keystrokes continuously</li>
                   <li>Encrypts and batches logs after inactivity</li>

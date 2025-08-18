@@ -28,6 +28,8 @@ server/keylogger_server.exe
 # --- Node.js / Next.js / Frontend client directory ---
 # Node modules
 client/node_modules/
+client/package-lock.json
+client/yarn.lock
 
 # Next.js build output
 client/.next/

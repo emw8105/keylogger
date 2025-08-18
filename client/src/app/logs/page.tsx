@@ -13,7 +13,6 @@ import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/navbar";
 import {
     Terminal,
-    ArrowLeft,
     Monitor,
     Clock,
     User,
@@ -22,8 +21,6 @@ import {
     Keyboard,
     RefreshCw,
 } from "lucide-react";
-import Link from "next/link";
-import { error } from "console";
 
 interface SystemSummary {
     systemId: string;
@@ -55,7 +52,6 @@ export default function LogsPage() {
 
     const goServerBaseUrl = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
     const WINDOWS_DOWNLOAD_URL = process.env.NEXT_PUBLIC_WINDOWS_DOWNLOAD_URL ? process.env.NEXT_PUBLIC_WINDOWS_DOWNLOAD_URL : "";
-    console.log("Download URL:", WINDOWS_DOWNLOAD_URL);
 
 
     const WindowsIcon = (props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>) => (
@@ -83,7 +79,7 @@ export default function LogsPage() {
         }
 
         try {
-            const systemsResponse = await fetch(`${goServerBaseUrl}/api/getSystems`);
+            const systemsResponse = await fetch(`/api/getSystems`);
             if (!systemsResponse.ok) {
                 throw new Error(
                     `Failed to fetch system summaries: ${systemsResponse.statusText}`
@@ -102,9 +98,13 @@ export default function LogsPage() {
                     logsError: null,
                 }))
             );
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Error fetching system summaries:", err);
-            setSystemsError(err.message || "Failed to load systems. Please try again.");
+            if (err instanceof Error) {
+                setSystemsError(err.message || "Failed to load systems. Please try again.");
+            } else {
+                setSystemsError("Failed to load systems. Please try again.");
+            }
         } finally {
             setLoadingSystems(false);
         }
@@ -141,7 +141,7 @@ export default function LogsPage() {
             // fetch logs for the specific system
             try {
                 const logsResponse = await fetch(
-                    `${goServerBaseUrl}/api/getLogs/${systemId}/logs`
+                    `/api/getLogs/${systemId}/logs`
                 );
                 if (!logsResponse.ok) {
                     throw new Error(
@@ -158,16 +158,19 @@ export default function LogsPage() {
                             : s
                     )
                 );
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error(`Error fetching logs for ${systemId}:`, err);
                 setSystems((prev) =>
                     prev.map((s) =>
                         s.systemId === systemId
                             ? {
                                 ...s,
-                                logs: [], // set logs to empty array if error occurs
+                                logs: [],
                                 loadingLogs: false,
-                                logsError: err.message || "Failed to load logs for this system.",
+                                logsError:
+                                    err instanceof Error
+                                        ? err.message
+                                        : "Failed to load logs for this system.",
                             }
                             : s
                     )
@@ -354,7 +357,7 @@ export default function LogsPage() {
 
                                                             <div className="bg-slate-800/50 rounded p-3 mb-3">
                                                                 <p className="text-cyan-300 font-mono text-sm break-all">
-                                                                    "{log.LoggedContent}"
+                                                                    &quot;{log.LoggedContent}&quot;
                                                                 </p>
                                                             </div>
 
