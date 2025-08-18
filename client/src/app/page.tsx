@@ -4,8 +4,24 @@ import { Badge } from "@/components/ui/badge"
 import { Download, Eye, Terminal, Code, Database, Github, ExternalLink } from "lucide-react"
 import Navbar from "@/components/navbar"
 import Link from "next/link"
+import { JSX, SVGProps } from "react"
 
 export default function HomePage() {
+
+  const WINDOWS_DOWNLOAD_URL = process.env.NEXT_PUBLIC_WINDOWS_DOWNLOAD_URL ? process.env.NEXT_PUBLIC_WINDOWS_DOWNLOAD_URL : "";
+  console.log(WINDOWS_DOWNLOAD_URL)
+  const WindowsIcon = (props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>) => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      {...props}
+    >
+      <path d="M0 3.79V10h11.23V0H1.8C.81 0 0 .81 0 1.8v1.99zm12.77 0V10H24V1.8C24 .81 23.19 0 22.2 0H12.77v3.79zm-12.77 7.7V20.2C0 21.19.81 22 1.8 22h9.43V11.49H0zm12.77 0V22H22.2c.99 0 1.8-.81 1.8-1.8V11.49H12.77z" />
+    </svg>
+  );
+
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <Navbar currentPage="home" />
@@ -27,11 +43,19 @@ export default function HomePage() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
             <Button
+              asChild
               size="lg"
               className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white px-8 py-3 text-lg flex items-center space-x-2 border-0 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/25"
             >
-              <Download className="h-5 w-5" />
-              <span>Download (Windows)</span>
+              <a
+                href={WINDOWS_DOWNLOAD_URL}
+                download="Keylogger_windows.exe"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <WindowsIcon className="h-5 w-5 ml-2" />
+                <span>Download for Windows</span>
+              </a>
             </Button>
             <Link href="/logs">
               <Button
@@ -243,10 +267,19 @@ export default function HomePage() {
               </Button>
             </Link>
             <Button
+              asChild
               size="lg"
               className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white px-8 py-3 text-lg border-0 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/25"
             >
-              Download & Run
+              <a
+                href={WINDOWS_DOWNLOAD_URL}
+                download="Keylogger_windows.exe"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <WindowsIcon className="h-5 w-5 mr-2" />
+                <span>Download & Run</span>
+              </a>
             </Button>
           </div>
 
