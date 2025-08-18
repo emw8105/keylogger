@@ -14,7 +14,7 @@ export async function GET(
 ) {
   try {
     const { systemId } = await params; // we have to await params because they're async in Next 15+
-    const goServerBaseUrl = process.env.SERVER_BASE_URL;
+    const goServerBaseUrl = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
 
     if (!goServerBaseUrl) {
       return NextResponse.json(

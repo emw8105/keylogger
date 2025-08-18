@@ -10,7 +10,7 @@ interface SystemSummary {
 
 export async function GET() {
   try {
-    const goServerBaseUrl = process.env.SERVER_BASE_URL;
+    const goServerBaseUrl = process.env.NEXT_PUBLIC_SERVER_BASE_URL;
     if (!goServerBaseUrl) {
       return NextResponse.json(
         { error: "Go server base URL not configured" },
