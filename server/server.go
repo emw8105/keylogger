@@ -22,12 +22,12 @@ const PUBLIC_KEY_FILE = "server_public.pem"
 const MAX_LOG_CHARACTERS = 500
 
 type SystemInfo struct {
-	SystemID     string `json:"systemId" firestore:"systemID"`
+	SystemID     string `json:"system_id" firestore:"SystemID"`
 	Hostname     string `json:"hostname" firestore:"hostname"`
 	OS           string `json:"os" firestore:"os"`
-	OSRelease    string `json:"osRelease" firestore:"osRelease"`
+	OSRelease    string `json:"os_release" firestore:"osRelease"`
 	Username     string `json:"username" firestore:"username"`
-	ActiveWindow string `json:"activeWindow" firestore:"activeWindow"`
+	ActiveWindow string `json:"active_window" firestore:"activeWindow"`
 }
 
 type LogPayload struct {

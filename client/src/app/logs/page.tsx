@@ -23,10 +23,10 @@ import {
 } from "lucide-react";
 
 interface SystemSummary {
-    systemId: string;
+    system_id: string;
     hostname: string;
     os: string;
-    osRelease: string;
+    os_release: string;
     username: string;
 }
 
@@ -117,7 +117,7 @@ export default function LogsPage() {
             // also set the loading state to true to indicate logs are being fetched
             setSystems((prev) =>
                 prev.map((s) =>
-                    s.systemId === systemId ? { ...s, loadingLogs: true, logsError: null } : s
+                    s.system_id === systemId ? { ...s, loadingLogs: true, logsError: null } : s
                 )
             );
 
@@ -125,7 +125,7 @@ export default function LogsPage() {
             if (!goServerBaseUrl) {
                 setSystems((prev) =>
                     prev.map((s) =>
-                        s.systemId === systemId
+                        s.system_id === systemId
                             ? {
                                 ...s,
                                 loadingLogs: false,
@@ -153,7 +153,7 @@ export default function LogsPage() {
                 // update the system with fetched logs and reset loading state
                 setSystems((prev) =>
                     prev.map((s) =>
-                        s.systemId === systemId
+                        s.system_id === systemId
                             ? { ...s, logs, loadingLogs: false, logsError: null }
                             : s
                     )
@@ -162,7 +162,7 @@ export default function LogsPage() {
                 console.error(`Error fetching logs for ${systemId}:`, err);
                 setSystems((prev) =>
                     prev.map((s) =>
-                        s.systemId === systemId
+                        s.system_id === systemId
                             ? {
                                 ...s,
                                 logs: [],
@@ -187,14 +187,14 @@ export default function LogsPage() {
     const toggleSystem = (systemId: string) => {
         setSystems((prev) =>
             prev.map((system) => {
-                if (system.systemId === systemId) {
+                if (system.system_id === systemId) {
                     // if already expanded, just collapse it
                     if (system.expanded) {
                         return { ...system, expanded: false };
                     } else {
                         // if not expanded and logs are not loaded, fetch them
                         if (system.logs === null && !system.loadingLogs) {
-                            fetchLogsForSystem(system.systemId);
+                            fetchLogsForSystem(system.system_id);
                         }
                         return { ...system, expanded: true };
                     }
@@ -278,12 +278,12 @@ export default function LogsPage() {
                         ) : (
                             systems.map((system) => (
                                 <Card
-                                    key={system.systemId}
+                                    key={system.system_id}
                                     className="bg-slate-800/50 border-slate-700 backdrop-blur-sm hover:bg-slate-800/70 transition-all duration-300"
                                 >
                                     <CardHeader
                                         className="cursor-pointer hover:bg-slate-700/30 transition-colors"
-                                        onClick={() => toggleSystem(system.systemId)}
+                                        onClick={() => toggleSystem(system.system_id)}
                                     >
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center space-x-4">
@@ -307,7 +307,7 @@ export default function LogsPage() {
                                                     </CardTitle>
                                                     <CardDescription className="text-slate-400">
                                                         <User className="h-4 w-4 inline mr-1" />
-                                                        {system.username} • System ID: {system.systemId}
+                                                        {system.username} • System ID: {system.system_id}
                                                         <br />
                                                     </CardDescription>
                                                 </div>

@@ -46,7 +46,7 @@ func logHandler(c *gin.Context) {
 		return
 	}
 
-	log.Printf("Received log batch from system %s", payload.SystemInfo.SystemID)
+	log.Printf("Received log batch from system: %s", payload.SystemInfo.SystemID)
 
 	decryptedLogContent, err := decryptLogs(payload, c)
 	if err != nil {
