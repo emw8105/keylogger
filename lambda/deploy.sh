@@ -13,7 +13,7 @@
 
 set -euo pipefail
 
-FUNCTION_NAME="Keylogger"
+FUNCTION_NAME="go-keylogger"
 LAMBDA_ARCH="${LAMBDA_ARCH:-arm64}"
 FIREBASE_KEY_FILE="${FIREBASE_KEY_FILE:-../server/keylogger-poc-firebase-adminsdk-fbsvc-f8da15b4be.json}"
 
