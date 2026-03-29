@@ -135,6 +135,23 @@ A React-based web application serving as the project's public interface.
       cd server/
       ./deploy.sh
      ```
+   - **Deploy as AWS Lambda (Alternative)**:
+     - The `lambda/` directory contains a refactored version of the Go server that runs as a single AWS Lambda function behind API Gateway. This is a cost-effective alternative to running an EC2 instance for low-traffic workloads.
+     - **Prerequisites**: Create a Lambda function in AWS (Go runtime on `provided.al2023`, arm64 or amd64) with an API Gateway v2 (HTTP API) trigger.
+     - **Environment Variables** (set on the Lambda function):
+       ```
+       FIREBASE_SERVICE_ACCOUNT_KEY_PATH=keylogger-poc-firebase-adminsdk-xxxxx.json
+       RSA_PRIVATE_KEY_PEM=<contents of server/keys/server_private.pem>
+       RSA_PUBLIC_KEY_PEM=<contents of server/keys/server_public.pem>
+       CORS_ALLOWED_ORIGINS=https://your-domain.com,http://localhost:3000
+       ```
+     - Bundle your Firebase service account JSON alongside the binary in the deployment zip.
+     - **Deploy**:
+       ```bash
+       cd lambda/
+       ./deploy_lambda.sh <your-lambda-function-name>
+       ```
+     - Update your Next.js client `NEXT_PUBLIC_SERVER_BASE_URL` to point to the API Gateway URL.
 2. Python Client (Keylogger) Build & Deployment
    The keylogger client is distributed as a pre-built Windows executable.
    - **Install Python Dependencies**:
