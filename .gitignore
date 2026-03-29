@@ -24,6 +24,8 @@ logger/*.spec
 # Compiled Go binaries
 server/keylogger_server
 server/keylogger_server.exe
+lambda/keylogger_server
+lambda/keylogger_server.exe
 
 # --- Node.js / Next.js / Frontend client directory ---
 # Node modules
@@ -51,7 +53,8 @@ client/next-env.d.ts
 server/logs/*
 
 # keys
-server/keylogger-poc-firebase-adminsdk-*
+keylogger-poc-firebase-adminsdk-*
+
 *.pem
 server/keys/*
 

@@ -13,6 +13,7 @@ import (
 )
 
 const MAX_LOG_CHARACTERS = 500
+const DEFAULT_FIREBASE_SERVICE_ACCOUNT_FILE = "keylogger-poc-firebase-adminsdk-fbsvc-f8da15b4be.json"
 
 var ginLambda *ginadapter.GinLambdaV2
 var logSaver LogSaver
@@ -21,7 +22,8 @@ func init() {
 	// Initialize Firebase
 	serviceAccountKeyPath := os.Getenv("FIREBASE_SERVICE_ACCOUNT_KEY_PATH")
 	if serviceAccountKeyPath == "" {
-		log.Fatal("ERROR: FIREBASE_SERVICE_ACCOUNT_KEY_PATH environment variable not set")
+		serviceAccountKeyPath = DEFAULT_FIREBASE_SERVICE_ACCOUNT_FILE
+		log.Printf("FIREBASE_SERVICE_ACCOUNT_KEY_PATH not set. Falling back to bundled file: %s", serviceAccountKeyPath)
 	}
 	if err := InitializeFirebase(serviceAccountKeyPath); err != nil {
 		log.Fatalf("ERROR: Failed to initialize Firebase: %v", err)
@@ -39,7 +41,7 @@ func init() {
 	router.Use(gin.Recovery())
 
 	// CORS configuration — override allowed origins via CORS_ALLOWED_ORIGINS env var (comma-separated)
-	allowedOrigins := []string{"http://localhost:3000"}
+	allowedOrigins := []string{"http://localhost:3000, https://keylogger-site.doypid.com"}
 	if envOrigins := os.Getenv("CORS_ALLOWED_ORIGINS"); envOrigins != "" {
 		allowedOrigins = splitOrigins(envOrigins)
 	}
