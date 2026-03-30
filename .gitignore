@@ -27,6 +27,10 @@ server/keylogger_server.exe
 lambda/keylogger_server
 lambda/keylogger_server.exe
 
+# Deployment intermediaries
+lambda/*.zip
+bootstrap
+
 # --- Node.js / Next.js / Frontend client directory ---
 # Node modules
 client/node_modules/
